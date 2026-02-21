@@ -3,7 +3,7 @@ using CSharpNumerics.Physics;
 using CSharpNumerics.Physics.Applied;
 using CSharpNumerics.Physics.Applied.Objects;
 using CSharpNumerics.Physics.Objects;
-using CSVector = Numerics.Objects.Vector;
+using CSVector = CSharpNumerics.Numerics.Objects.Vector;
 
 /// <summary>
 /// Demo using CSharpNumerics RigidBody + Velocity Verlet integration
