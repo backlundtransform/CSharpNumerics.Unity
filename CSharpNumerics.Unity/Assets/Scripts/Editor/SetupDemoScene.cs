@@ -28,7 +28,7 @@ public static class SetupDemoScene
             cam.gameObject.AddComponent<OrbitCamera>();
 
         // ── Create PhysicsDemo manager ──
-        var existing = Object.FindAnyObjectByType<PhysicsDemo>();
+        var existing = Object.FindObjectOfType<PhysicsDemo>();
         if (existing != null)
         {
             Debug.Log("PhysicsDemo already exists in scene.");
@@ -39,7 +39,7 @@ public static class SetupDemoScene
         manager.AddComponent<PhysicsDemo>();
 
         // ── Add directional light if missing ──
-        if (Object.FindAnyObjectByType<Light>() == null)
+        if (Object.FindObjectOfType<Light>() == null)
         {
             var lightGo = new GameObject("Directional Light");
             var light = lightGo.AddComponent<Light>();

@@ -1,112 +1,180 @@
 using UnityEngine;
+using CSharpNumerics.Physics;
 using CSharpNumerics.Physics.Applied;
+using CSharpNumerics.Physics.Applied.Objects;
 using CSharpNumerics.Physics.Objects;
-using CSVector = CSharpNumerics.Vector;
+using CSVector = Numerics.Objects.Vector;
 
 /// <summary>
-/// Simple demo that uses CSharpNumerics PhysicsWorld to simulate
-/// bouncing spheres on a floor, rendered by Unity GameObjects.
+/// Demo using CSharpNumerics RigidBody + Velocity Verlet integration
+/// with manual floor collision and sphere-sphere collision response.
 /// </summary>
 public class PhysicsDemo : MonoBehaviour
 {
     [Header("Spawn Settings")]
     [SerializeField] private int ballCount = 5;
-    [SerializeField] private float spawnHeight = 10f;
-    [SerializeField] private float spawnSpread = 4f;
-    [SerializeField] private float ballRadius = 0.5f;
+    [SerializeField] private float spawnHeight = 6f;
+    [SerializeField] private float spawnSpread = 1.5f;
+    [SerializeField] private float ballRadius = 0.7f;
     [SerializeField] private float ballMass = 1f;
+    [SerializeField] private float arenaHalf = 4f;
 
     [Header("Physics Settings")]
     [SerializeField] private float gravity = -9.81f;
-    [SerializeField] private float restitution = 0.7f;
-    [SerializeField] private float friction = 0.3f;
-    [SerializeField] private int solverIterations = 10;
+    [SerializeField] private float restitution = 0.8f;
+    [SerializeField] private float frictionCoeff = 0.3f;
 
-    private PhysicsWorld _world;
+    private RigidBody[] _bodies;
     private GameObject[] _ballObjects;
-    private int[] _bodyIndices;
+    private double _gravityD;
 
     void Start()
     {
-        // ── Create CSharpNumerics physics world ──
-        // CSharpNumerics uses Z-up; we map Z→Y for Unity later
-        _world = new PhysicsWorld
-        {
-            Gravity = new CSVector(0, 0, gravity),
-            DefaultRestitution = restitution,
-            DefaultFriction = friction,
-            SolverIterations = solverIterations,
-            FixedTimeStep = Time.fixedDeltaTime,
-        };
+        _gravityD = gravity;
 
-        // ── Static floor at z=0 ──
-        var floor = RigidBody.CreateStatic(new CSVector(0, 0, 0));
-        _world.AddBody(floor, boundingRadius: 100);
-
-        // Visual floor
+        // ── Visual floor (matches arena size) ──
         var floorGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
         floorGo.name = "Floor";
-        floorGo.transform.position = new Vector3(0, -0.5f, 0);
-        floorGo.transform.localScale = new Vector3(20, 1, 20);
-        floorGo.GetComponent<Renderer>().material.color = new Color(0.3f, 0.3f, 0.3f);
-        // Remove Unity's collider — we use CSharpNumerics for physics
+        floorGo.transform.position = new Vector3(0, -0.025f, 0);
+        floorGo.transform.localScale = new Vector3(arenaHalf * 2, 0.05f, arenaHalf * 2);
+        floorGo.GetComponent<Renderer>().material = CreateURPMat(new Color(0.15f, 0.15f, 0.2f));
         Destroy(floorGo.GetComponent<Collider>());
 
-        // ── Spawn bouncing balls ──
+        // ── Spawn balls ──
+        _bodies = new RigidBody[ballCount];
         _ballObjects = new GameObject[ballCount];
-        _bodyIndices = new int[ballCount];
 
         for (int i = 0; i < ballCount; i++)
         {
-            // Random start position (CSharpNumerics Z = up)
             float x = Random.Range(-spawnSpread, spawnSpread);
             float y = Random.Range(-spawnSpread, spawnSpread);
-            float z = spawnHeight + Random.Range(0f, 5f);
+            float z = spawnHeight + Random.Range(0f, 4f);
 
             var body = RigidBody.CreateSolidSphere(mass: ballMass, radius: ballRadius);
             body.Position = new CSVector(x, y, z);
-            body.Velocity = new CSVector(
-                Random.Range(-2f, 2f),
-                Random.Range(-2f, 2f),
-                0);
+            body.Velocity = new CSVector(0, 0, 0); // drop straight down
+            _bodies[i] = body;
 
-            _bodyIndices[i] = _world.AddBody(body, boundingRadius: ballRadius);
-
-            // Visual sphere
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = $"Ball_{i}";
             go.transform.localScale = Vector3.one * ballRadius * 2f;
-            go.GetComponent<Renderer>().material.color = Color.HSVToRGB(
-                (float)i / ballCount, 0.8f, 1f);
+            // Bright distinct colors: red, green, blue, yellow, magenta
+            Color[] colors = { Color.red, Color.green, Color.blue, Color.yellow, Color.magenta,
+                               Color.cyan, new Color(1f, 0.5f, 0f), new Color(0.5f, 0f, 1f) };
+            go.GetComponent<Renderer>().material = CreateURPMat(colors[i % colors.Length]);
             Destroy(go.GetComponent<Collider>());
-
             _ballObjects[i] = go;
         }
+
+        Debug.Log($"CSharpNumerics PhysicsDemo: {ballCount} balls, gravity={gravity}");
     }
 
     void FixedUpdate()
     {
-        // Step the CSharpNumerics physics
-        _world.Step(dt: Time.fixedDeltaTime);
+        if (_bodies == null) return;
+
+        double dt = Time.fixedDeltaTime;
+
+        // Gravity + Verlet integration using CSharpNumerics RigidBody
+        System.Func<RigidBody, (CSVector force, CSVector torque)> forceFunc = b =>
+        {
+            var gForce = new CSVector(0, 0, _gravityD * b.Mass);
+            return (gForce, new CSVector(0, 0, 0));
+        };
+
+        for (int i = 0; i < _bodies.Length; i++)
+        {
+            _bodies[i].IntegrateVelocityVerlet(forceFunc, dt);
+        }
+
+        // ── Floor collision (plane at z=0) ──
+        for (int i = 0; i < _bodies.Length; i++)
+        {
+            double r = ballRadius;
+            double px = _bodies[i].Position.x;
+            double py = _bodies[i].Position.y;
+            double pz = _bodies[i].Position.z;
+            double vx = _bodies[i].Velocity.x;
+            double vy = _bodies[i].Velocity.y;
+            double vz = _bodies[i].Velocity.z;
+
+            // Floor bounce
+            if (pz < r)
+            {
+                pz = r;
+                if (vz < 0) vz = -vz * restitution;
+            }
+
+            // Wall bounces (keep balls inside arena)
+            double wall = arenaHalf - r;
+            if (px > wall)  { px = wall;  if (vx > 0) vx = -vx * restitution; }
+            if (px < -wall) { px = -wall; if (vx < 0) vx = -vx * restitution; }
+            if (py > wall)  { py = wall;  if (vy > 0) vy = -vy * restitution; }
+            if (py < -wall) { py = -wall; if (vy < 0) vy = -vy * restitution; }
+
+            _bodies[i].Position = new CSVector(px, py, pz);
+            _bodies[i].Velocity = new CSVector(vx, vy, vz);
+        }
+
+        // ── Sphere-sphere collisions using CSharpNumerics ──
+        for (int i = 0; i < _bodies.Length; i++)
+        {
+            for (int j = i + 1; j < _bodies.Length; j++)
+            {
+                var sA = new CSharpNumerics.Physics.Applied.Objects.BoundingSphere(_bodies[i].Position, ballRadius);
+                var sB = new CSharpNumerics.Physics.Applied.Objects.BoundingSphere(_bodies[j].Position, ballRadius);
+                var contact = sA.SphereSphereContact(sB);
+
+                if (contact is CSharpNumerics.Physics.Applied.Objects.ContactPoint c)
+                {
+                    CollisionResponse.ResolveCollision(
+                        ref _bodies[i], ref _bodies[j], c,
+                        restitution: restitution,
+                        friction: frictionCoeff);
+
+                    CollisionResponse.CorrectPositions(
+                        ref _bodies[i], ref _bodies[j], c,
+                        correctionFraction: 0.4,
+                        slop: 0.01);
+                }
+            }
+        }
     }
 
     void Update()
     {
-        // Sync Unity transforms from CSharpNumerics state
-        // CSharpNumerics: X right, Y forward, Z up
-        // Unity:          X right, Y up,      Z forward
-        for (int i = 0; i < ballCount; i++)
+        if (_bodies == null || _ballObjects == null) return;
+
+        for (int i = 0; i < _bodies.Length; i++)
         {
-            ref var body = ref _world.Body(_bodyIndices[i]);
-            _ballObjects[i].transform.position = CSToUnity(body.Position);
+            _ballObjects[i].transform.position = CSToUnity(_bodies[i].Position);
         }
     }
 
     /// <summary>
-    /// Convert CSharpNumerics Vector (Z-up) → Unity Vector3 (Y-up).
+    /// CSharpNumerics Z-up → Unity Y-up.
     /// </summary>
     private static Vector3 CSToUnity(CSVector v)
     {
-        return new Vector3((float)v[0], (float)v[2], (float)v[1]);
+        return new Vector3((float)v.x, (float)v.z, (float)v.y);
+    }
+
+    /// <summary>
+    /// Create a new URP Lit material with the given color.
+    /// Falls back to Standard shader if URP Lit not found.
+    /// </summary>
+    private static Material CreateURPMat(Color color)
+    {
+        // Try URP Lit first, then fallback to Standard
+        var shader = Shader.Find("Universal Render Pipeline/Lit")
+                  ?? Shader.Find("Standard");
+
+        var mat = new Material(shader);
+        // URP uses _BaseColor, Standard uses _Color
+        if (mat.HasProperty("_BaseColor"))
+            mat.SetColor("_BaseColor", color);
+        if (mat.HasProperty("_Color"))
+            mat.SetColor("_Color", color);
+        return mat;
     }
 }

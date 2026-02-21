@@ -1,32 +1,27 @@
 using UnityEngine;
 
 /// <summary>
-/// Simple orbit camera — rotate around origin with mouse, scroll to zoom.
+/// Fixed camera positioned to see the bouncing balls clearly.
+/// Slowly orbits around the scene center.
 /// </summary>
 public class OrbitCamera : MonoBehaviour
 {
-    [SerializeField] private float distance = 20f;
-    [SerializeField] private float rotationSpeed = 5f;
-    [SerializeField] private float scrollSpeed = 5f;
-    [SerializeField] private Vector3 target = new Vector3(0, 5, 0);
+    [SerializeField] private float distance = 18f;
+    [SerializeField] private float height = 12f;
+    [SerializeField] private float autoRotateSpeed = 10f;
 
-    private float _yaw = 30f;
-    private float _pitch = 20f;
+    private float _angle = 0f;
 
-    void Update()
+    void LateUpdate()
     {
-        if (Input.GetMouseButton(1)) // right-click drag
-        {
-            _yaw += Input.GetAxis("Mouse X") * rotationSpeed;
-            _pitch -= Input.GetAxis("Mouse Y") * rotationSpeed;
-            _pitch = Mathf.Clamp(_pitch, -89f, 89f);
-        }
+        _angle += autoRotateSpeed * Time.deltaTime;
+        float rad = _angle * Mathf.Deg2Rad;
 
-        distance -= Input.GetAxis("Mouse ScrollWheel") * scrollSpeed;
-        distance = Mathf.Clamp(distance, 2f, 50f);
-
-        var rotation = Quaternion.Euler(_pitch, _yaw, 0);
-        transform.position = target + rotation * (Vector3.back * distance);
-        transform.LookAt(target);
+        // Circle around (0, height, 0) looking at the floor center
+        transform.position = new Vector3(
+            Mathf.Sin(rad) * distance,
+            height,
+            Mathf.Cos(rad) * distance);
+        transform.LookAt(new Vector3(0, 2f, 0));
     }
 }
