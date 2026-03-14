@@ -4,6 +4,8 @@ using CSharpNumerics.Engines.Game;
 using CSharpNumerics.Engines.Game.Objects;
 using CSharpNumerics.Physics.Objects;
 using CSVector = CSharpNumerics.Numerics.Objects.Vector;
+using BoundingSphere = CSharpNumerics.Engines.Game.Objects.BoundingSphere;
+using ContactPoint = CSharpNumerics.Engines.Game.Objects.ContactPoint;
 
 /// <summary>
 /// Demo using CSharpNumerics RigidBody + Velocity Verlet integration

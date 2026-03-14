@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using CSharpNumerics.Engines.Audio;
 
 /// <summary>
@@ -35,17 +36,20 @@ public class EffectsChain : MonoBehaviour
 
     void Update()
     {
+        var kb = Keyboard.current;
+        if (kb == null) return;
+
         // Toggle effects with F-keys
-        if (Input.GetKeyDown(KeyCode.F5)) reverbOn = !reverbOn;
-        if (Input.GetKeyDown(KeyCode.F6)) delayOn = !delayOn;
-        if (Input.GetKeyDown(KeyCode.F7)) filterOn = !filterOn;
-        if (Input.GetKeyDown(KeyCode.F8)) compressorOn = !compressorOn;
+        if (kb.f5Key.wasPressedThisFrame) reverbOn = !reverbOn;
+        if (kb.f6Key.wasPressedThisFrame) delayOn = !delayOn;
+        if (kb.f7Key.wasPressedThisFrame) filterOn = !filterOn;
+        if (kb.f8Key.wasPressedThisFrame) compressorOn = !compressorOn;
 
         // Adjust filter cutoff with up/down arrows when filter is on
         if (filterOn)
         {
-            if (Input.GetKey(KeyCode.UpArrow))   cutoffLow = Mathf.Min(cutoffLow + 200f * Time.deltaTime, 20000f);
-            if (Input.GetKey(KeyCode.DownArrow)) cutoffLow = Mathf.Max(cutoffLow - 200f * Time.deltaTime, 20f);
+            if (kb.upArrowKey.isPressed)   cutoffLow = Mathf.Min(cutoffLow + 200f * Time.deltaTime, 20000f);
+            if (kb.downArrowKey.isPressed) cutoffLow = Mathf.Max(cutoffLow - 200f * Time.deltaTime, 20f);
         }
     }
 

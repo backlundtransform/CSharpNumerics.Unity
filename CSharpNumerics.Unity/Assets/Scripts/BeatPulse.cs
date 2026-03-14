@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using CSharpNumerics.Engines.Audio;
 using System.Collections.Generic;
 
@@ -39,6 +40,7 @@ public class BeatPulse : MonoBehaviour
     private List<double> _onsets;
     private int _nextOnsetIndex;
     private float _loopStartTime;
+    private bool _isPlaying = false;
 
     void Start()
     {
@@ -62,10 +64,11 @@ public class BeatPulse : MonoBehaviour
         }
 
         _baseScale = transform.localScale;
-        GenerateAndAnalyzeLoop();
+        // Analyze loop for onset data but don't play until Space is pressed
+        GenerateLoop();
     }
 
-    private void GenerateAndAnalyzeLoop()
+    private void GenerateLoop()
     {
         // Build a rhythmic loop: kick-like hits at regular intervals
         float beatInterval = 60f / bpm;
@@ -105,10 +108,13 @@ public class BeatPulse : MonoBehaviour
         else
             DetectedPitch = "—";
 
-        // Play the loop
-        AudioBridge.PlayLoop(_source, loopBuf, "beat_loop");
-        _loopStartTime = Time.time;
-        _nextOnsetIndex = 0;
+        // Play the loop — only if already playing (toggled by Space)
+        if (_isPlaying)
+        {
+            AudioBridge.PlayLoop(_source, loopBuf, "beat_loop");
+            _loopStartTime = Time.time;
+            _nextOnsetIndex = 0;
+        }
 
         Debug.Log($"BeatPulse: {_onsets.Count} onsets detected, est. {estimatedBpm:F0} BPM, pitch {DetectedPitch}");
     }
@@ -143,13 +149,21 @@ public class BeatPulse : MonoBehaviour
             _floorMat.SetColor("_EmissionColor", emission);
         }
 
-        // Regenerate loop on Space key
-        if (Input.GetKeyDown(KeyCode.Space))
+        // Toggle beat loop on Space key
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            bpm += 20f;
-            if (bpm > 200f) bpm = 80f;
-            _source.Stop();
-            GenerateAndAnalyzeLoop();
+            if (_isPlaying)
+            {
+                _source.Stop();
+                _isPlaying = false;
+            }
+            else
+            {
+                _isPlaying = true;
+                AudioBridge.PlayLoop(_source, LoopBuffer, "beat_loop");
+                _loopStartTime = Time.time;
+                _nextOnsetIndex = 0;
+            }
         }
     }
 

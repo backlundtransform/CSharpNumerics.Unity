@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using CSharpNumerics.Engines.Audio;
 
 /// <summary>
@@ -31,7 +32,7 @@ public class SynthManager : MonoBehaviour
 
     // Note frequencies: C4 D4 E4 F4 G4 A4 B4 C5
     private static readonly float[] NoteFreqs = { 261.63f, 293.66f, 329.63f, 349.23f, 392.00f, 440f, 493.88f, 523.25f };
-    private static readonly KeyCode[] NoteKeys = { KeyCode.Q, KeyCode.W, KeyCode.E, KeyCode.R, KeyCode.T, KeyCode.Y, KeyCode.U, KeyCode.I };
+    private static readonly Key[] NoteKeys = { Key.Q, Key.W, Key.E, Key.R, Key.T, Key.Y, Key.U, Key.I };
     private static readonly string[] NoteNames = { "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5" };
 
     [Header("HUD")]
@@ -57,16 +58,19 @@ public class SynthManager : MonoBehaviour
 
     void Update()
     {
+        var kb = Keyboard.current;
+        if (kb == null) return;
+
         // Waveform switching: 1-4
-        if (Input.GetKeyDown(KeyCode.Alpha1)) { CurrentWaveform = SignalGenerator.Waveform.Sine;     WaveformName = "Sine"; }
-        if (Input.GetKeyDown(KeyCode.Alpha2)) { CurrentWaveform = SignalGenerator.Waveform.Square;   WaveformName = "Square"; }
-        if (Input.GetKeyDown(KeyCode.Alpha3)) { CurrentWaveform = SignalGenerator.Waveform.Sawtooth; WaveformName = "Sawtooth"; }
-        if (Input.GetKeyDown(KeyCode.Alpha4)) { CurrentWaveform = SignalGenerator.Waveform.Triangle; WaveformName = "Triangle"; }
+        if (kb.digit1Key.wasPressedThisFrame) { CurrentWaveform = SignalGenerator.Waveform.Sine;     WaveformName = "Sine"; }
+        if (kb.digit2Key.wasPressedThisFrame) { CurrentWaveform = SignalGenerator.Waveform.Square;   WaveformName = "Square"; }
+        if (kb.digit3Key.wasPressedThisFrame) { CurrentWaveform = SignalGenerator.Waveform.Sawtooth; WaveformName = "Sawtooth"; }
+        if (kb.digit4Key.wasPressedThisFrame) { CurrentWaveform = SignalGenerator.Waveform.Triangle; WaveformName = "Triangle"; }
 
         // Note playback
         for (int i = 0; i < NoteKeys.Length; i++)
         {
-            if (Input.GetKeyDown(NoteKeys[i]))
+            if (kb[NoteKeys[i]].wasPressedThisFrame)
             {
                 PlayNote(NoteFreqs[i]);
                 LastNotePlayed = NoteNames[i];
@@ -103,9 +107,9 @@ public class SynthManager : MonoBehaviour
         int count = Mathf.Min(waveformResolution, buf.FrameCount);
         _oscilloscope.positionCount = count;
 
-        // Position the oscilloscope above the synth pad
-        Vector3 origin = transform.position + Vector3.up * 3f;
-        float width = 4f;
+        // Position the oscilloscope centered in world
+        Vector3 origin = new Vector3(0f, 5f, 2f);
+        float width = 8f;
 
         for (int i = 0; i < count; i++)
         {

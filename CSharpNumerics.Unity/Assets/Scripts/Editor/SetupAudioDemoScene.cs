@@ -18,8 +18,8 @@ public static class SetupAudioDemoScene
             cam = camGo.AddComponent<Camera>();
             camGo.tag = "MainCamera";
         }
-        cam.transform.position = new Vector3(0, 8, -16);
-        cam.transform.LookAt(new Vector3(0, 2, 2));
+        cam.transform.position = new Vector3(0, 6, -12);
+        cam.transform.LookAt(new Vector3(0, 2, 4));
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = new Color(0.02f, 0.02f, 0.04f); // very dark
 
@@ -27,9 +27,13 @@ public static class SetupAudioDemoScene
         if (cam.GetComponent<AudioListener>() == null)
             cam.gameObject.AddComponent<AudioListener>();
 
-        // Slow orbit for showcase
+        // Remove orbit camera if present (static cam for audio demo)
         var orbit = cam.GetComponent<OrbitCamera>();
-        if (orbit == null) orbit = cam.gameObject.AddComponent<OrbitCamera>();
+        if (orbit != null) Object.DestroyImmediate(orbit);
+
+        // Remove PhysicsDemo if present (not part of audio demo)
+        var physics = Object.FindObjectOfType<PhysicsDemo>();
+        if (physics != null) Object.DestroyImmediate(physics.gameObject);
 
         // HUD
         if (cam.GetComponent<AudioDemoHUD>() == null)
@@ -57,34 +61,26 @@ public static class SetupAudioDemoScene
             floor.AddComponent<BeatPulse>();
         }
 
-        // ── Synth Pad (left side) ──
+        // ── Synth Pad (center-front, facing camera) ──
         if (Object.FindObjectOfType<SynthManager>() == null)
         {
             var synthGo = new GameObject("SynthPad");
-            synthGo.transform.position = new Vector3(-6f, 2f, 4f);
+            synthGo.transform.position = new Vector3(0f, 2f, 0f);
             synthGo.AddComponent<SynthManager>();
-            // Effects chain is attached to the same object
             synthGo.AddComponent<EffectsChain>();
         }
 
-        // ── Spectrum Wall (back wall) ──
+        // ── Spectrum Wall (centered behind synth) ──
         if (Object.FindObjectOfType<SpectrumVisualizer>() == null)
         {
             var wallGo = new GameObject("SpectrumWall");
-            wallGo.transform.position = new Vector3(0, 0, 8f);
+            wallGo.transform.position = new Vector3(0, 0, 6f);
             wallGo.AddComponent<SpectrumVisualizer>();
         }
 
-        // ── Floating Orb (center, will orbit) ──
-        if (Object.FindObjectOfType<OrbSpatializer>() == null)
-        {
-            var orb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            orb.name = "FloatingOrb";
-            orb.transform.position = new Vector3(0, 3f, 0);
-            orb.transform.localScale = Vector3.one * 0.8f;
-            Object.DestroyImmediate(orb.GetComponent<Collider>());
-            orb.AddComponent<OrbSpatializer>();
-        }
+        // Remove orb if present from previous setup
+        var oldOrb = Object.FindObjectOfType<OrbSpatializer>();
+        if (oldOrb != null) Object.DestroyImmediate(oldOrb.gameObject);
 
         // ── Ambient grid floor lines (subtle visual) ──
         CreateGridLines();

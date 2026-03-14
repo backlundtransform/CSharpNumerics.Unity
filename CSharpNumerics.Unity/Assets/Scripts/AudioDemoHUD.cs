@@ -58,7 +58,7 @@ public class AudioDemoHUD : MonoBehaviour
         {
             GUILayout.Label($"{beat.DetectedBPM}", _labelStyle);
             GUILayout.Label($"Pitch: {beat.DetectedPitch}", _labelStyle);
-            GUILayout.Label("[Space] Change BPM", _labelStyle);
+            GUILayout.Label("[Space] Toggle beat loop", _labelStyle);
         }
 
         GUILayout.Space(10);

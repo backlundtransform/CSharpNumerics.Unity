@@ -8,10 +8,10 @@ using CSharpNumerics.Engines.Audio;
 public class OrbSpatializer : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField] private float orbitRadius = 6f;
-    [SerializeField] private float orbitSpeed = 0.5f;
+    [SerializeField] private float orbitRadius = 4f;
+    [SerializeField] private float orbitSpeed = 0.3f;
     [SerializeField] private float orbitHeight = 3f;
-    [SerializeField] private float verticalBob = 1.5f;
+    [SerializeField] private float verticalBob = 0.8f;
 
     [Header("Audio")]
     [SerializeField] private float toneFreq = 440f;

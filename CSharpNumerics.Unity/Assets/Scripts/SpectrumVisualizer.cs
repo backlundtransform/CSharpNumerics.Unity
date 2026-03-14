@@ -11,7 +11,7 @@ public class SpectrumVisualizer : MonoBehaviour
     [SerializeField] private int fftSize = 2048;
     [SerializeField] private int barCount = 64;
     [SerializeField] private float maxBarHeight = 8f;
-    [SerializeField] private float magnitudeScale = 50f;
+    [SerializeField] private float magnitudeScale = 200f;
 
     [Header("Layout")]
     [SerializeField] private float wallWidth = 12f;
@@ -67,6 +67,8 @@ public class SpectrumVisualizer : MonoBehaviour
 
     void Update()
     {
+        if (_analyzer == null || _bars == null) return;
+
         // Get samples from whatever is playing
         var synth = FindObjectOfType<SynthManager>();
         AudioBuffer buf = synth != null ? synth.LastBuffer : null;
@@ -86,19 +88,34 @@ public class SpectrumVisualizer : MonoBehaviour
         System.Array.Copy(buf.Samples, samples, copyLen);
 
         var spectrum = _analyzer.Analyze(samples, sampleRate: buf.SampleRate);
-        if (spectrum == null || spectrum.Length == 0) return;
+        if (spectrum == null || spectrum.Count == 0) return;
 
-        // Map spectrum bins to bars
-        int binsPerBar = Mathf.Max(1, spectrum.Length / barCount);
+        // Map spectrum bins to bars using logarithmic frequency scale
+        // so bass doesn't eat all bars and treble gets representation
+        int specLen = spectrum.Count;
+        double minFreq = 20.0;
+        double maxFreq = buf.SampleRate * 0.5; // Nyquist
+        double logMin = System.Math.Log(minFreq);
+        double logMax = System.Math.Log(maxFreq);
+
         for (int i = 0; i < barCount; i++)
         {
-            // Average magnitude for this bar's frequency range
+            // Logarithmic bin range for this bar
+            double logLo = logMin + (logMax - logMin) * i / barCount;
+            double logHi = logMin + (logMax - logMin) * (i + 1) / barCount;
+            double freqLo = System.Math.Exp(logLo);
+            double freqHi = System.Math.Exp(logHi);
+
+            // Convert frequencies to bin indices
+            double binPerHz = specLen / maxFreq;
+            int binStart = Mathf.Clamp((int)(freqLo * binPerHz), 0, specLen - 1);
+            int binEnd   = Mathf.Clamp((int)(freqHi * binPerHz), binStart + 1, specLen);
+
+            // Average magnitude for this frequency range
             double sum = 0;
-            int start = i * binsPerBar;
-            int end = Mathf.Min(start + binsPerBar, spectrum.Length);
-            for (int b = start; b < end; b++)
-                sum += spectrum[b].Magnitude;
-            double avgMag = sum / Mathf.Max(1, end - start);
+            for (int b = binStart; b < binEnd; b++)
+                sum += spectrum[b].Value;
+            double avgMag = sum / Mathf.Max(1, binEnd - binStart);
 
             float height = Mathf.Clamp((float)avgMag * magnitudeScale, 0.05f, maxBarHeight);
 
