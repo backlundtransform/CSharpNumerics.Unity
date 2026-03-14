@@ -1,7 +1,7 @@
 using UnityEngine;
 using CSharpNumerics.Physics;
-using CSharpNumerics.Physics.Applied;
-using CSharpNumerics.Physics.Applied.Objects;
+using CSharpNumerics.Engines.Game;
+using CSharpNumerics.Engines.Game.Objects;
 using CSharpNumerics.Physics.Objects;
 using CSVector = CSharpNumerics.Numerics.Objects.Vector;
 
@@ -121,11 +121,11 @@ public class PhysicsDemo : MonoBehaviour
         {
             for (int j = i + 1; j < _bodies.Length; j++)
             {
-                var sA = new CSharpNumerics.Physics.Applied.Objects.BoundingSphere(_bodies[i].Position, ballRadius);
-                var sB = new CSharpNumerics.Physics.Applied.Objects.BoundingSphere(_bodies[j].Position, ballRadius);
+                var sA = new BoundingSphere(_bodies[i].Position, ballRadius);
+                var sB = new BoundingSphere(_bodies[j].Position, ballRadius);
                 var contact = sA.SphereSphereContact(sB);
 
-                if (contact is CSharpNumerics.Physics.Applied.Objects.ContactPoint c)
+                if (contact is ContactPoint c)
                 {
                     CollisionResponse.ResolveCollision(
                         ref _bodies[i], ref _bodies[j], c,

@@ -1,40 +1,52 @@
-# CSharpNumerics.Unity — Physics Demo
+# CSharpNumerics.Unity — Audio & Physics Demo
 
-A minimal Unity 6 demo that uses [CSharpNumerics](https://www.nuget.org/packages/CSharpNumerics/) `PhysicsWorld` to simulate rigid body physics and renders the results with Unity GameObjects.
+Unity 6 demos showcasing [CSharpNumerics](https://www.nuget.org/packages/CSharpNumerics/) **Audio Engine** and **Game Engine** — pure C#, no native plugins.
 
-## What it demonstrates
+## 🎧 Audio Engine Demo
 
-- **`PhysicsWorld`** — the main simulation orchestrator from `CSharpNumerics.Physics.Applied`
-- **`RigidBody`** — solid spheres with automatic inertia tensors
-- **Collision detection & response** — sphere-sphere and sphere-plane impulse-based resolution
-- **Gravity, restitution, friction** — configurable in the Inspector
+A dark neon 3D scene with five interactive zones:
 
-## How it works
+| Element | Script | CSharpNumerics API |
+|---|---|---|
+| **Synth Pad** | `SynthManager.cs` | `Synthesizer`, `AudioOscillator`, `Envelope` |
+| **Spectrum Wall** | `SpectrumVisualizer.cs` | `SpectrumAnalyzer` (FFT) |
+| **Floating Orb** | `OrbSpatializer.cs` | `SpatialAudio.Spatialize()` |
+| **Effects Rack** | `EffectsChain.cs` | `Reverb`, `Delay`, `AudioFilter`, `Compressor` |
+| **Beat Floor** | `BeatPulse.cs` | `BeatDetector`, `PitchDetector` |
 
-1. On `Start()`, a `PhysicsWorld` is created with gravity, a static floor body, and several dynamic sphere bodies.
-2. On `FixedUpdate()`, `PhysicsWorld.Step(dt)` advances the simulation.
-3. On `Update()`, Unity `Transform` positions are synced from the CSharpNumerics body state.
+### Controls
 
-CSharpNumerics uses **Z-up** coordinates; the demo converts to Unity's **Y-up** convention automatically.
+| Key | Action |
+|---|---|
+| Q–I | Play notes C4–C5 |
+| 1–4 | Switch waveform (Sine/Square/Sawtooth/Triangle) |
+| F5–F8 | Toggle Reverb / Delay / Filter / Compressor |
+| ↑/↓ | Adjust filter cutoff |
+| Space | Change beat loop BPM |
 
-## Setup
+### Setup
 
-1. Open the project in **Unity 6** (6000.x).
-2. Open `Assets/Scenes/SampleScene`.
-3. Go to **CSharpNumerics → Setup Demo Scene** in the menu bar.
-4. Press **Play**.
+1. Open in **Unity 6** (6000.x)
+2. **CSharpNumerics → Setup Audio Demo Scene**
+3. Press **Play**
 
-## NuGet package
+## ⚛️ Physics Demo
 
-The `CSharpNumerics.dll` is included in `Assets/Plugins/`. It was downloaded from:
-- https://www.nuget.org/packages/CSharpNumerics/
+Bouncing spheres with `RigidBody`, Velocity Verlet integration, sphere-sphere collision response, and wall boundaries.
 
-Source code: https://github.com/backlundtransform/CSharpNumerics
+### Setup
+
+1. **CSharpNumerics → Setup Demo Scene**
+2. Press **Play**
+
+## NuGet
+
+CSharpNumerics 2.6.1 (`netstandard2.1`) — `Assets/Plugins/CSharpNumerics.dll`
 
 ## Links
 
 - 📦 [NuGet](https://www.nuget.org/packages/CSharpNumerics/)
-- 📂 [CSharpNumerics GitHub](https://github.com/backlundtransform/CSharpNumerics)
-- 📘 [Documentation](https://csnumerics.com/docs/Charpnumerics/)
-- ⚛️ [Physics docs](https://csnumerics.com/docs/Charpnumerics/Physics/)
-- 🎮 [Game Engine docs](https://csnumerics.com/docs/Charpnumerics/Physics/Applied/Game%20Engine)
+- 📂 [GitHub](https://github.com/backlundtransform/CSharpNumerics)
+- 📘 [Documentation](https://csnumerics.com)
+- 🎧 [Audio Engine docs](https://csnumerics.com/docs/Csharpnumerics/Simulation%20Engines/Audio%20Engine/)
+- 🎮 [Game Engine docs](https://csnumerics.com/docs/Csharpnumerics/Simulation%20Engines/Game%20Engine/)
